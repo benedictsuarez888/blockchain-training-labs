@@ -73,20 +73,34 @@ var request = {
   txId: tx_id
 };
 
-var newcar = [];
-var carid = req.body.carid;
-var make = req.body.make;
-var model = req.body.model;
-var color = req.body.color;
-var owner = req.body.owner;
-newcar.push(carid);
+var newInvoice= [];
+var invoiceNumber = req.body.invoiceNumber;
+var billedTo = req.body.billedTo;
+var invoiceDate = req.body.invoiceDate;
+var invoiceAmount = req.body.invoiceAmount;
+var itemDescription = req.body.itemDescription;
+var gr = req.body.gr;
+var isPaid = req.body.isPaid;
+var paidAmount = req.body.paidAmount;
+var repaid = req.body.repaid;
+var repaymentAmount = req.body.repaymentAmount;
+
+
+newInvoice.push(invoiceNumber);
+
 if (req.method == "POST")
 {
-  request.fcn='createCar';
-  newcar.push(make);
-  newcar.push(model);
-  newcar.push(color);
-  newcar.push(owner); 
+  request.fcn='createInvoice';
+  newInvoice.push(billedTo);
+  newInvoice.push(invoiceDate);
+  newInvoice.push(invoiceAmount);
+  newInvoice.push(itemDescription);
+  newInvoice.push(gr);
+  newInvoice.push(isPaid);
+  newInvoice.push(paidAmount);
+  newInvoice.push(repaid);
+  newInvoice.push(repaymentAmount);
+
 }
 else if(req.method == "PUT")
 {
@@ -98,9 +112,8 @@ else if(req.method == "PUT")
     
     else if(color)
     {
-      //TODO START send appropriate attributes for car colour chnage
-
-      //TODO END send appropriate attributes for car colour chnage
+        request.fcn= 'changeCarColour',
+         newcar.push(color);
     }
 }
 
@@ -237,7 +250,7 @@ throw new Error('Failed to get user1.... run registerUser.js');
 const request = {
 //targets : --- letting this default to the peers assigned to the channel
 chaincodeId: 'fabcar',
-fcn: 'queryAllCars',
+fcn: 'queryAllInvoice',
 args: ['']
 };
 
@@ -250,8 +263,9 @@ var attr = req.query.attr;
 if (owner)
 {
   //TODO START send appropriate attributes to query Cars by owner Rich Query
-  
-  
+  ar.push(owner);
+  request.fcn='queryCarsByOwner';
+  request.args = ar;
   //TODO END send appropriate attributes to query Cars by owner Rich Query
 }
 else if (car)
