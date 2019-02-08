@@ -32,8 +32,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strconv"
-
+	//"strconv"
+	"time"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	// "github.com/hyperledger/fabric/core/chaincode/lib/cid"
 	sc "github.com/hyperledger/fabric/protos/peer"
@@ -74,9 +74,7 @@ func (s *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 	// Retrieve the requested Smart Contract function and arguments
 	function, args := APIstub.GetFunctionAndParameters()
 	// Route to the appropriate handler function to interact with the ledger appropriately
-	if function == "initLedger" {
-		return s.initLedger(APIstub)
-	} else if function == "newInvoice" {
+	if function == "newInvoice" {
 		return s.newInvoice(APIstub, args)
 	} else if function == "queryAllInvoices" {
 		return s.queryAllinvoices(APIstub)
@@ -90,12 +88,14 @@ func (s *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response 
 		return s.isPaidToSupplier(APIstub, args)
 	} else if function == "isPaidToBank" {
 		return s.isPaidToBank(APIstub, args)
+	} else if function == "getHistoryForInvoice" {
+		return s.getHistoryForInvoice(APIstub, args)
 	}
 
 	return shim.Error("Invalid Smart Contract function name.")
 }
 
-func (s *SmartContract) queryCarsByOwner(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
+func (s *SmartContract) queryInvoiceByOEM(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
 
 	//TODO Write approriate code here
 	if len(args) < 1 {
@@ -152,33 +152,6 @@ func getQueryResultForQueryString(APIstub shim.ChaincodeStubInterface, queryStri
 	buffer.WriteString("]")
 
 	return buffer.Bytes(), nil
-}
-
-// func (s *SmartContract) queryCar(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
-
-// 	if len(args) != 1 {
-// 		return shim.Error("Incorrect number of arguments. Expecting 1")
-// 	}
-
-// 	carAsBytes, _ := APIstub.GetState(args[0])
-// 	return shim.Success(carAsBytes)
-// }
-
-func (s *SmartContract) initLedger(APIstub shim.ChaincodeStubInterface) sc.Response {
-	invoice := []Invoice{
-		Invoice{InvoiceNumber: "0001", BilledTo: "Samsung", InvoiceDate: "10-30-2014", InvoiceAmount: "10,000", ItemDescription: "Screen", GR: "N", IsPaid: "N", PaidAmount: "0", Repaid: "N", RepaymentAmount: "0"},
-	}
-
-	i := 0
-	for i < len(invoice) {
-		fmt.Println("i is ", i)
-		invoiceAsBytes, _ := json.Marshal(invoice[i])
-		APIstub.PutState("INV"+strconv.Itoa(i), invoiceAsBytes)
-		fmt.Println("Added", invoice[i])
-		i = i + 1
-	}
-
-	return shim.Success(nil)
 }
 
 func (s *SmartContract) newInvoice(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
@@ -275,15 +248,16 @@ func (s *SmartContract) isGoodsReceived(APIstub shim.ChaincodeStubInterface, arg
 
 func (s *SmartContract) isPaidToSupplier(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
 
-	if len(args) != 2 {
-		return shim.Error("Incorrect number of arguments. Expecting 2")
+	if len(args) != 3 {
+		return shim.Error("Incorrect number of arguments. Expecting 3")
 	}
 
 	invoiceAsBytes, _ := APIstub.GetState(args[0])
 	invoice := Invoice{}
 
 	json.Unmarshal(invoiceAsBytes, &invoice)
-	invoice.IsPaid = args[1]
+	invoice.PaidAmount = args[1]
+	invoice.IsPaid = args[2]
 
 	invoiceAsBytes, _ = json.Marshal(invoice)
 	APIstub.PutState(args[0], invoiceAsBytes)
@@ -293,15 +267,16 @@ func (s *SmartContract) isPaidToSupplier(APIstub shim.ChaincodeStubInterface, ar
 
 func (s *SmartContract) isPaidToBank(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
 
-	if len(args) != 2 {
-		return shim.Error("Incorrect number of arguments. Expecting 2")
+	if len(args) != 3 {
+		return shim.Error("Incorrect number of arguments. Expecting 3")
 	}
 
 	invoiceAsBytes, _ := APIstub.GetState(args[0])
 	invoice := Invoice{}
 
 	json.Unmarshal(invoiceAsBytes, &invoice)
-	invoice.Repaid = args[1]
+	invoice.RepaymentAmount = args[1]
+	invoice.Repaid = args[2]
 
 	invoiceAsBytes, _ = json.Marshal(invoice)
 	APIstub.PutState(args[0], invoiceAsBytes)
@@ -309,43 +284,6 @@ func (s *SmartContract) isPaidToBank(APIstub shim.ChaincodeStubInterface, args [
 	return shim.Success(nil)
 }
 
-// func (s *SmartContract) changeCarOwner(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
-
-// 	if len(args) != 2 {
-// 		return shim.Error("Incorrect number of arguments. Expecting 2")
-// 	}
-
-// 	carAsBytes, _ := APIstub.GetState(args[0])
-// 	car := Car{}
-
-// 	json.Unmarshal(carAsBytes, &car)
-// 	car.ItemDescription = args[1]
-
-// 	carAsBytes, _ = json.Marshal(car)
-// 	APIstub.PutState(args[0], carAsBytes)
-
-// 	return shim.Success(nil)
-
-// }
-
-// func (s *SmartContract) changeCarColour(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
-
-// 	if len(args) != 2 {
-// 		return shim.Error("Incorrect number of arguments. Expecting 2")
-// 	}
-
-// 	carAsBytes, _ := APIstub.GetState(args[0])
-// 	car := Car{}
-
-// 	json.Unmarshal(carAsBytes, &car)
-// 	car.InvoiceAmount = args[1]
-
-// 	carAsBytes, _ = json.Marshal(car)
-// 	APIstub.PutState(args[0], carAsBytes)
-
-// 	return shim.Success(nil)
-
-// }
 
 func (s *SmartContract) getUser(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
 
@@ -374,54 +312,54 @@ func (s *SmartContract) getUser(APIstub shim.ChaincodeStubInterface, args []stri
 
 }
 
-// func (s *SmartContract) getHistoryForCar(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
+func (s *SmartContract) getHistoryForInvoice(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
 
-// 	if len(args) < 1 {
-// 		return shim.Error("Incorrect number of arguments. Expecting 1")
-// 	}
+	if len(args) < 1 {
+		return shim.Error("Incorrect number of arguments. Expecting 1")
+	}
 
-// 	carKey := args[0]
+	invoiceKey := args[0]
 
-// 	resultsIterator, err := APIstub.GetHistoryForKey(carKey)
-// 	if err != nil {
-// 		return shim.Error(err.Error())
-// 	}
-// 	defer resultsIterator.Close()
+	resultsIterator, err := APIstub.GetHistoryForKey(invoiceKey)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	defer resultsIterator.Close()
 
-// 	// buffer is a JSON array containing historic values for the car
-// 	var buffer bytes.Buffer
-// 	buffer.WriteString("[")
+	// buffer is a JSON array containing historic values for the car
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
 
-// 	bArrayMemberAlreadyWritten := false
-// 	for resultsIterator.HasNext() {
-// 		response, err := resultsIterator.Next()
-// 		if err != nil {
-// 			return shim.Error(err.Error())
-// 		}
-// 		// Add a comma before array members, suppress it for the first array member
-// 		if bArrayMemberAlreadyWritten == true {
-// 			buffer.WriteString(",")
-// 		}
-// 		buffer.WriteString("{\"TxId\":")
-// 		buffer.WriteString("\"")
-// 		buffer.WriteString(response.TxId)
-// 		buffer.WriteString("\"")
+	bArrayMemberAlreadyWritten := false
+	for resultsIterator.HasNext() {
+		response, err := resultsIterator.Next()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		// Add a comma before array members, suppress it for the first array member
+		if bArrayMemberAlreadyWritten == true {
+			buffer.WriteString(",")
+		}
+		buffer.WriteString("{\"TxId\":")
+		buffer.WriteString("\"")
+		buffer.WriteString(response.TxId)
+		buffer.WriteString("\"")
 
-// 		buffer.WriteString(", \"Value\":")
-// 		buffer.WriteString(string(response.Value))
+		buffer.WriteString(", \"Value\":")
+		buffer.WriteString(string(response.Value))
 
-// 		buffer.WriteString(", \"Timestamp\":")
-// 		buffer.WriteString("\"")
-// 		buffer.WriteString(time.Unix(response.Timestamp.Seconds, int64(response.Timestamp.Nanos)).String())
-// 		buffer.WriteString("\"")
+		buffer.WriteString(", \"Timestamp\":")
+		buffer.WriteString("\"")
+		buffer.WriteString(time.Unix(response.Timestamp.Seconds, int64(response.Timestamp.Nanos)).String())
+		buffer.WriteString("\"")
 
-// 		buffer.WriteString("}")
-// 		bArrayMemberAlreadyWritten = true
-// 	}
-// 	buffer.WriteString("]")
+		buffer.WriteString("}")
+		bArrayMemberAlreadyWritten = true
+	}
+	buffer.WriteString("]")
 
-// 	return shim.Success(buffer.Bytes())
-// }
+	return shim.Success(buffer.Bytes())
+}
 
 // The main function is only relevant in unit test mode. Only included here for completeness.
 func main() {

@@ -114,11 +114,13 @@ else if(req.method == "PUT")
     else if(isPaid)
     {
         request.fcn= 'isPaidToSupplier',
+        newInvoice.push(paidAmount);
         newInvoice.push(isPaid);
     }
     else if(repaid)
     {
         request.fcn= 'isPaidToBank',
+        newInvoice.push(repaymentAmount);
         newInvoice.push(repaid);
     }
 }
@@ -262,24 +264,15 @@ args: ['']
 
 
 var ar = [];
+var invoice = req.query.invoice;
 var attr = req.query.attr;
 
-// if (owner)
-// {
-//   //TODO START send appropriate attributes to query Cars by owner Rich Query
-//   ar.push(owner);
-//   request.fcn='queryCarsByOwner';
-//   request.args = ar;
-//   //TODO END send appropriate attributes to query Cars by owner Rich Query
-// }
-// else if (car)
-// {
-//   ar.push(car);
-//   request.fcn='getHistoryForCar';
-//   request.args = ar;
-// }
-
-if (attr)
+if (invoice)
+{
+  ar.push(invoice);
+  request.fcn='getHistoryForInvoice';
+  request.args = ar;
+} else if (attr)
 {
   ar.push(attr);
   request.fcn='getUser';

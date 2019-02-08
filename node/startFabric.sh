@@ -30,7 +30,7 @@ docker-compose -f ./docker-compose.yml up -d cli
 docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode install -n fabinvoice -v 1.0 -p "$CC_SRC_PATH" -l "$LANGUAGE"
 docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode instantiate -o orderer.example.com:7050 -C mychannel -n fabinvoice -l "$LANGUAGE" -v 1.0 -c '{"Args":[""]}' -P "OR ('Org1MSP.member','Org2MSP.member')"
 sleep 10
-docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabinvoice -c '{"function":"initLedger","Args":[""]}'
+docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabinvoice -c '{"function":"queryAllInvoices","Args":[""]}'
 
 printf "\nTotal setup execution time : $(($(date +%s) - starttime)) secs ...\n\n\n"
 printf "Start by installing required packages run 'npm install'\n"
@@ -50,7 +50,7 @@ printf "The 'node query.js' may be run at anytime once the user has been registe
 # Copy packages from $GOPATH under chaincode.
 
 
-#peer chaincode install -n fabinvoice -v 1.03 -l "golang" -p "github.com/fabinvoice/go"
-#peer chaincode upgrade -n fabinvoice -v 1.03 -o orderer.example.com:7050 -C mychannel -l "golang" -p "github.com/fabinvoice/go" -c '{"Args":[""]}' -P "OR ('Org1MSP.member','Org2MSP.member')"
+#peer chaincode install -n fabinvoice -v 1.06 -l "golang" -p "github.com/fabinvoice/go"
+#peer chaincode upgrade -n fabinvoice -v 1.06 -o orderer.example.com:7050 -C mychannel -l "golang" -p "github.com/fabinvoice/go" -c '{"Args":[""]}' -P "OR ('Org1MSP.member','Org2MSP.member')"
 
 #peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"queryAllCars","Args":[""]}'
