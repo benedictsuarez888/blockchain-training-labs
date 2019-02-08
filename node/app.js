@@ -35,7 +35,7 @@ app.get('/test', (req, res) => res.send('Hello World!'))
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
-app.all('/car', function(req, res){    
+app.all('/invoice', function(req, res){    
 
 
 // create the key value store as defined in the fabric-client/config/default.json 'key-value-store' setting
@@ -68,12 +68,13 @@ console.log("Assigning transaction_id: ", tx_id._transaction_id);
 // changeCarOwner chaincode function - requires 2 args , ex: args: ['CAR10', 'Dave'],
 // must send the proposal to endorsing peers
 var request = {
-  chaincodeId: 'fabcar',
+  chaincodeId: 'fabinvoice',
   chainId: 'mychannel',
   txId: tx_id
 };
 
 var newInvoice= [];
+var invoiceId = req.body.invoiceId;
 var invoiceNumber = req.body.invoiceNumber;
 var billedTo = req.body.billedTo;
 var invoiceDate = req.body.invoiceDate;
@@ -86,11 +87,12 @@ var repaid = req.body.repaid;
 var repaymentAmount = req.body.repaymentAmount;
 
 
-newInvoice.push(invoiceNumber);
+newInvoice.push(invoiceId);
 
 if (req.method == "POST")
 {
-  request.fcn='createInvoice';
+  request.fcn='newInvoice';
+  newInvoice.push(invoiceNumber);
   newInvoice.push(billedTo);
   newInvoice.push(invoiceDate);
   newInvoice.push(invoiceAmount);
@@ -104,21 +106,25 @@ if (req.method == "POST")
 }
 else if(req.method == "PUT")
 {
-    if(owner)    
+    if(gr)    
     {
-        request.fcn= 'changeCarOwner',
-        newcar.push(owner);
+        request.fcn= 'isGoodsReceived',
+        newInvoice.push(gr);
     }
-    
-    else if(color)
+    else if(isPaid)
     {
-        request.fcn= 'changeCarColour',
-         newcar.push(color);
+        request.fcn= 'isPaidToSupplier',
+        newInvoice.push(isPaid);
+    }
+    else if(repaid)
+    {
+        request.fcn= 'isPaidToBank',
+        newInvoice.push(repaid);
     }
 }
 
 
-request.args=newcar;
+request.args=newInvoice;
 console.log(request);
 
 // send the transaction proposal to the peers
@@ -245,36 +251,35 @@ member_user = user_from_store;
 throw new Error('Failed to get user1.... run registerUser.js');
 }
 
-// queryCar chaincode function - requires 1 argument, ex: args: ['CAR4'],
-// queryAllCars chaincode function - requires no arguments , ex: args: [''],
+
+// queryAllInvoices chaincode function - requires no arguments , ex: args: [''],
 const request = {
 //targets : --- letting this default to the peers assigned to the channel
-chaincodeId: 'fabcar',
-fcn: 'queryAllInvoice',
+chaincodeId: 'fabinvoice',
+fcn: 'queryAllInvoices',
 args: ['']
 };
 
 
 var ar = [];
-var owner = req.query.owner;
-var car = req.query.car;
 var attr = req.query.attr;
 
-if (owner)
-{
-  //TODO START send appropriate attributes to query Cars by owner Rich Query
-  ar.push(owner);
-  request.fcn='queryCarsByOwner';
-  request.args = ar;
-  //TODO END send appropriate attributes to query Cars by owner Rich Query
-}
-else if (car)
-{
-  ar.push(car);
-  request.fcn='getHistoryForCar';
-  request.args = ar;
-}
-else if (attr)
+// if (owner)
+// {
+//   //TODO START send appropriate attributes to query Cars by owner Rich Query
+//   ar.push(owner);
+//   request.fcn='queryCarsByOwner';
+//   request.args = ar;
+//   //TODO END send appropriate attributes to query Cars by owner Rich Query
+// }
+// else if (car)
+// {
+//   ar.push(car);
+//   request.fcn='getHistoryForCar';
+//   request.args = ar;
+// }
+
+if (attr)
 {
   ar.push(attr);
   request.fcn='getUser';
@@ -348,17 +353,3 @@ app.get('/block', function (req, res) {
   
 
   });
-
-
-
-  function unicodeToChar(text) {
-    return text.replace(/\\u[\dA-F]{4}/gi, 
-           function (match) {
-                return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
-           });
- }
-  
-
-
-  
-  
